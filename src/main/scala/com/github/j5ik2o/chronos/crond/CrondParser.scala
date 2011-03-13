@@ -30,6 +30,7 @@ class CrondParser extends RegexParsers {
 
 
   def list(digit: => Parser[Expr]) = repsep(digit, ",") ^^ {
+    case x :: Nil => x
     case l => ListExpr(l)
   }
 

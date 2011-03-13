@@ -13,31 +13,13 @@ import org.scalatest.FunSuite
 
 class CrondParserTest extends FunSuite {
 
-  def add(a: Int, b: Int) = a + b
-  def sub(a: Int, b: Int) = a - b
-  def multi(a: Int, b: Int) = a * b
-  def divide(a: Int, b: Int) = a / b
+    test("カンマテスト") {
+      val p = new CrondParser
+      val result = p.parse("1,2 1 1 1")
+      println(result)
+      assert(result.successful)
+    }
 
-  def executeCalc(calculator: (Int, Int) => Int, a: Int, b: Int) = {
-    calculator(a, b)
-  }
-
-  // test("dtest"){
-  println(executeCalc(add, 1, 2))
-
-  val p = new CrondParser
-  val result = p.parse("* 2 3 1")
-  println(result)
-  //println(result)
-  //assert(result.successful)
-  // }
-
-  //  test("カンマテスト") {
-  //    val p = new CrondParser
-  //    val result = p.parse("1,2 1 1 1")
-  //    println(result)
-  //    assert(result.successful)
-  //  }
   //
   //  test("ハイフンテスト") {
   //    val p = new CrondParser
