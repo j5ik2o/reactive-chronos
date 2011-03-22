@@ -2,7 +2,19 @@ package com.github.j5ik2o.chronos.crond
 
 import util.parsing.combinator._
 
-trait Expr
+
+// 式を訪問するビジター
+trait ExprVisitor[T] {
+  def visit(e: Expr): T
+}
+
+// 式を表すトレイト
+trait Expr {
+  def accept[T](visitor: ExprVisitor[T]): T = {
+    visitor.visit(this)
+  }
+}
+
 
 case class NoOp extends Expr
 
