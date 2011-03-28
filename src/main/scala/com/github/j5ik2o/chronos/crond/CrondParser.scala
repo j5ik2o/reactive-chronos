@@ -28,17 +28,20 @@ case class RangeExpr(from: Expr, to: Expr, perOtion: Expr) extends Expr
 
 case class ListExpr(exprs: List[Expr]) extends Expr
 
-case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr) extends Expr
+case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr, dayOfWeeks: Expr) extends Expr
 
 class CrondParser extends RegexParsers {
 
   def parse(source: String) = parseAll(instruction, source)
 
-  def instruction: Parser[CronExpr] = digitInstruction(minDigit) ~ digitInstruction(hourDigit) ~ digitInstruction(dayDigit) ~ digitInstruction(monthDigit) ^^ {
-    case mins ~ hours ~ days ~ months => CronExpr(mins, hours, days, months)
-  }
+  def instruction: Parser[CronExpr] =
+    digitInstruction(minDigit) ~ digitInstruction(hourDigit) ~
+      digitInstruction(dayDigit) ~ digitInstruction(monthDigit) ~
+      digitInstruction(dayOfWeekDigit | dayOfWeekText) ^^ {
+      case mins ~ hours ~ days ~ months ~ dayOfWeeks => CronExpr(mins, hours, days, months, dayOfWeeks)
+    }
 
-  def digitInstruction(digit: => Parser[Expr]) = asterisk ||| list(digit) ||| range(digit) ||| asteriskPer(digit)
+  def digitInstruction(digit: => Parser[Expr]) = asterisk ||| list(digit ||| range(digit)) ||| range(digit) ||| asteriskPer(digit)
 
 
   def list(digit: => Parser[Expr]) = repsep(digit, ",") ^^ {
@@ -76,6 +79,36 @@ class CrondParser extends RegexParsers {
   lazy val monthDigit: Parser[Expr] = ("""0?[1-9]""".r ||| """1[0-2]""".r) ^^ {
     case digit => ValueExpr(digit.toInt)
   }
+
+  lazy val dayOfWeekDigit: Parser[Expr] = ("""[1-7]""".r) ^^ {
+    case digit => ValueExpr(digit.toInt)
+  }
+
+  lazy val SUN = """(?i)SUN""".r
+  lazy val MON = """(?i)MON""".r
+  lazy val TUE = """(?i)TUE""".r
+  lazy val WED = """(?i)WED""".r
+  lazy val THU = """(?i)THU""".r
+  lazy val FRI = """(?i)FRI""".r
+  lazy val SAT = """(?i)SAT""".r
+
+  lazy val dayOfWeekText: Parser[Expr] =
+    SUN ^^ {
+      case v => ValueExpr(1)
+    } ||| MON ^^ {
+      case v => ValueExpr(2)
+    } ||| TUE ^^ {
+      case v => ValueExpr(3)
+    } ||| WED ^^ {
+      case v => ValueExpr(4)
+    } ||| THU ^^ {
+      case v => ValueExpr(5)
+    } ||| FRI ^^ {
+      case v => ValueExpr(6)
+    } ||| SAT ^^ {
+      case v => ValueExpr(7)
+    }
+
 
   lazy val asterisk: Parser[Expr] = """[*]""".r ^^ {
     case asterisk => AnyValueExpr()

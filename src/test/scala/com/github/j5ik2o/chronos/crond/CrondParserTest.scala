@@ -15,8 +15,8 @@ class CrondParserTest extends FunSuite {
 
   test("カンマテスト") {
     val p = new CrondParser
-    val result = p.parse("* 10,15 * *")
-    //println(result)
+    val result = p.parse("* 10,15-16 * * *")
+    println(result)
 
     if (result.successful) {
       val evaluator = new CrondEvaluator

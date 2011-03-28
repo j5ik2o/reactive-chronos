@@ -39,16 +39,19 @@ class CrondEvaluator extends ExprVisitor[Boolean] {
   val dayMax = calendar.getActualMaximum(Calendar.DATE)
   val month = calendar.get(Calendar.MONTH) + 1
   val monthMax = calendar.getActualMaximum(Calendar.MONTH)
+  val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+  val dayOfWeekMax = calendar.getActualMaximum(Calendar.DAY_OF_WEEK)
 
   def visit(e: Expr) = e match {
-    case CronExpr(mins, hours, days, months) => {
+    case CronExpr(mins, hours, days, months, dayOfWeeks) => {
 
       val m = mins.accept(ExpressionEvaluator(min, minMax))
       val h = hours.accept(ExpressionEvaluator(hour, hourMax))
       val d = days.accept(ExpressionEvaluator(day, dayMax))
       val M = months.accept(ExpressionEvaluator(month, monthMax))
+      val dw = dayOfWeeks.accept(ExpressionEvaluator(dayOfWeek, dayOfWeekMax))
 
-      m && h && d && M
+      m && h && d && M && dw
     }
     case _ => false
   }
