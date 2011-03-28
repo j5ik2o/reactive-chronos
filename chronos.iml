@@ -4,7 +4,7 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
-        <option name="compilerLibraryName" value="Maven: org.scala-lang:scala-compiler-bundle:WrappedArray(2.8.0)" />
+        <option name="compilerLibraryName" value="Maven: org.scala-lang:scala-compiler-bundle:2.8.1" />
         <option name="vmOptions" value="" />
       </configuration>
     </facet>
@@ -36,7 +36,7 @@
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:0.9.15" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:0.9.15" level="project" />
     <orderEntry type="library" name="Maven: commons-lang:commons-lang:2.5" level="project" />
-    <orderEntry type="library" name="Maven: org.scala-lang:scala-library:2.8.0" level="project" />
+    <orderEntry type="library" name="Maven: org.scala-lang:scala-library:2.8.1" level="project" />
   </component>
 </module>
 

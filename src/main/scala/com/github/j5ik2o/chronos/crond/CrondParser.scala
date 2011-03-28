@@ -28,13 +28,13 @@ case class RangeExpr(from: Expr, to: Expr, perOtion: Expr) extends Expr
 
 case class ListExpr(exprs: List[Expr]) extends Expr
 
-case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr)
+case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr) extends Expr
 
 class CrondParser extends RegexParsers {
 
   def parse(source: String) = parseAll(instruction, source)
 
-  def instruction = digitInstruction(minDigit) ~ digitInstruction(hourDigit) ~ digitInstruction(dayDigit) ~ digitInstruction(monthDigit) ^^ {
+  def instruction: Parser[CronExpr] = digitInstruction(minDigit) ~ digitInstruction(hourDigit) ~ digitInstruction(dayDigit) ~ digitInstruction(monthDigit) ^^ {
     case mins ~ hours ~ days ~ months => CronExpr(mins, hours, days, months)
   }
 

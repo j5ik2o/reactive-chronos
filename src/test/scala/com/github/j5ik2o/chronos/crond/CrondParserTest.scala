@@ -15,27 +15,34 @@ class CrondParserTest extends FunSuite {
 
   test("カンマテスト") {
     val p = new CrondParser
-    val result = p.parse("* * * *")
-    println(result)
+    val result = p.parse("* 10,15 * *")
+    //println(result)
 
-    assert(result.successful)
-  }
-
-  test("ハイフンテスト") {
-    val p = new CrondParser
-    val result = p.parse("1-2 1 1 1")
-    println(result)
-    assert(result.successful)
-  }
-
-  test("分の解析処理ができること") {
-    val p = new CrondParser
-    for (m <- 0 to 59) {
-      val result = p.parse("%d 1 1 1".format(m))
-      println(result)
-      assert(result.successful)
+    if (result.successful) {
+      val evaluator = new CrondEvaluator
+      val check = result.get.accept(evaluator)
+      println(check)
     }
+
+
+    assert(result.successful)
   }
+
+  //  test("ハイフンテスト") {
+  //    val p = new CrondParser
+  //    val result = p.parse("1-2 1 1 1")
+  //    println(result)
+  //    assert(result.successful)
+  //  }
+  //
+  //  test("分の解析処理ができること") {
+  //    val p = new CrondParser
+  //    for (m <- 0 to 59) {
+  //      val result = p.parse("%d 1 1 1".format(m))
+  //      println(result)
+  //      assert(result.successful)
+  //    }
+  //  }
 
   //
   //  test("時の解析処理ができること") {

@@ -4,7 +4,7 @@
     <groupId>com.github.j5ik2o</groupId>
     <artifactId>chronos</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>money-sample</name>
+    <name>scala-sample</name>
     <inceptionYear>2010</inceptionYear>
     <licenses>
         <license>
@@ -170,7 +170,7 @@
         </dependency>
     </dependencies>
     <properties>
-        <scala.version>2.8.0</scala.version>
+        <scala.version>2.8.1</scala.version>
         <slf4j.version>1.5.6</slf4j.version>
         <logback.version>0.9.15</logback.version>
         <jmockit.version>0.999.4</jmockit.version>
