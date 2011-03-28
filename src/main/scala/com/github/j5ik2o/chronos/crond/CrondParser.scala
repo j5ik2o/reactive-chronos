@@ -20,6 +20,8 @@ case class NoOp extends Expr
 
 case class ValueExpr(digit: Int) extends Expr
 
+case class LastValue extends Expr
+
 case class AnyValueExpr extends Expr
 
 case class PerExpr(digit: Expr, option: Expr) extends Expr
@@ -74,6 +76,8 @@ class CrondParser extends RegexParsers {
 
   lazy val dayDigit: Parser[Expr] = ("""0?[1-9]""".r ||| """[12][0-9]""".r ||| """3[01]""".r) ^^ {
     case digit => ValueExpr(digit.toInt)
+  } ||| LAST ^^ {
+    case v => LastValue()
   }
 
   lazy val monthDigit: Parser[Expr] = ("""0?[1-9]""".r ||| """1[0-2]""".r) ^^ {
@@ -91,6 +95,7 @@ class CrondParser extends RegexParsers {
   lazy val THU = """(?i)THU""".r
   lazy val FRI = """(?i)FRI""".r
   lazy val SAT = """(?i)SAT""".r
+  lazy val LAST = "L"
 
   lazy val dayOfWeekText: Parser[Expr] =
     SUN ^^ {
@@ -107,6 +112,8 @@ class CrondParser extends RegexParsers {
       case v => ValueExpr(6)
     } ||| SAT ^^ {
       case v => ValueExpr(7)
+    } ||| LAST ^^ {
+      case v => LastValue()
     }
 
 

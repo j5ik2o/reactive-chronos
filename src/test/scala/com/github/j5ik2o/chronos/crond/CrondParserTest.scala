@@ -1,6 +1,7 @@
 package com.github.j5ik2o.chronos.crond
 
 import org.scalatest.FunSuite
+import java.util.Calendar
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,11 +16,11 @@ class CrondParserTest extends FunSuite {
 
   test("カンマテスト") {
     val p = new CrondParser
-    val result = p.parse("* 10,15-16 * * *")
+    val result = p.parse("* * L * L")
     println(result)
 
     if (result.successful) {
-      val evaluator = new CrondEvaluator
+      val evaluator = new CrondEvaluator(Calendar.getInstance())
       val check = result.get.accept(evaluator)
       println(check)
     }
