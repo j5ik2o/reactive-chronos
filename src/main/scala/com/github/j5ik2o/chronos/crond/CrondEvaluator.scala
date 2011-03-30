@@ -40,7 +40,7 @@ class CrondEvaluator(calendar: Calendar) extends ExprVisitor[Boolean] {
 
   // CRONDパラメータの各式の評価を行うビジター
   case class ExpressionEvaluator(now: Int, max: Int) extends ExprVisitor[Boolean] {
-    println("now = %d, max = %d".format(now, max))
+    //println("now = %d, max = %d".format(now, max))
     def visit(e: Expr) = e match {
       case AnyValueExpr() => true
       case LastValue() if (now == max) => true

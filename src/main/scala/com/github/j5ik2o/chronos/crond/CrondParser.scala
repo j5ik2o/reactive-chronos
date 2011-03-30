@@ -77,7 +77,7 @@ class CrondParser extends RegexParsers {
   lazy val dayDigit: Parser[Expr] = ("""0?[1-9]""".r ||| """[12][0-9]""".r ||| """3[01]""".r) ^^ {
     case digit => ValueExpr(digit.toInt)
   } ||| LAST ^^ {
-    case v => LastValue()
+    case _ => LastValue()
   }
 
   lazy val monthDigit: Parser[Expr] = ("""0?[1-9]""".r ||| """1[0-2]""".r) ^^ {
@@ -99,21 +99,21 @@ class CrondParser extends RegexParsers {
 
   lazy val dayOfWeekText: Parser[Expr] =
     SUN ^^ {
-      case v => ValueExpr(1)
+      case _ => ValueExpr(1)
     } ||| MON ^^ {
-      case v => ValueExpr(2)
+      case _ => ValueExpr(2)
     } ||| TUE ^^ {
-      case v => ValueExpr(3)
+      case _ => ValueExpr(3)
     } ||| WED ^^ {
-      case v => ValueExpr(4)
+      case _ => ValueExpr(4)
     } ||| THU ^^ {
-      case v => ValueExpr(5)
+      case _ => ValueExpr(5)
     } ||| FRI ^^ {
-      case v => ValueExpr(6)
+      case _ => ValueExpr(6)
     } ||| SAT ^^ {
-      case v => ValueExpr(7)
+      case _ => ValueExpr(7)
     } ||| LAST ^^ {
-      case v => LastValue()
+      case _ => LastValue()
     }
 
 
