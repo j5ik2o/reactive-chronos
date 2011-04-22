@@ -1,7 +1,7 @@
 package com.github.j5ik2o.chronos.crond
 
-import jp.tricreo.baseunits.intervals._
-import jp.tricreo.baseunits.time.{TimeOfDay, TimePoint}
+import jp.tricreo.baseunits.scala.intervals._
+import jp.tricreo.baseunits.scala.time.{TimeOfDay, TimePoint}
 import java.util.{TimeZone, Calendar, Date}
 
 /**
@@ -18,7 +18,6 @@ class CrondEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefau
   def visit(e: Expr) = e match {
     case CronExpr(mins, hours, days, months, dayOfWeeks) => {
       val calendar = timePoint.asJavaCalendar(timeZone)
-      //println(calendar.getTime.toString)
       val min = calendar.get(Calendar.MINUTE)
       val hour = calendar.get(Calendar.HOUR_OF_DAY)
       val day = calendar.get(Calendar.DATE)

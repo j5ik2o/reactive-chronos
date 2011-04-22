@@ -1,8 +1,8 @@
 package com.github.j5ik2o.chronos.crond
 
-import org.scalatest.FunSuite
-import jp.tricreo.baseunits.time.TimePoint
+import jp.tricreo.baseunits.scala.time.TimePoint
 import java.util.{TimeZone, Calendar}
+import org.scalatest.{AbstractSuite, FunSuite}
 
 /**
  * [[CrondParser]]のためのテスト
@@ -20,6 +20,9 @@ class CrondParserTest extends FunSuite {
           case _ => false
         }
       }
+
+      val evaluator = new CrondEvaluator(TimePoint.at(2011, 1, 1, 1, 1, TimeZone.getDefault))
+      assert(result.get.accept(evaluator))
     }
   }
 
@@ -104,6 +107,5 @@ class CrondParserTest extends FunSuite {
       }
     }
   }
-
 
 }

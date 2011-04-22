@@ -169,8 +169,8 @@
         </dependency>
         <dependency>
             <groupId>jp.tricreo</groupId>
-            <artifactId>baseunits</artifactId>
-            <version>1.0</version>
+            <artifactId>baseunits-scala</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <!-- SCALA DEPENDENCIES -->
         <dependency>
