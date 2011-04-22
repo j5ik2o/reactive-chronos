@@ -1,6 +1,7 @@
 package com.github.j5ik2o.chronos.crond
 
 import util.parsing.combinator._
+import java.text.ParseException
 
 
 // 式を訪問するビジター
@@ -32,9 +33,15 @@ case class ListExpr(exprs: List[Expr]) extends Expr
 
 case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr, dayOfWeeks: Expr) extends Expr
 
+case class CrondParseException(message:String) extends Exception(message)
+
 class CrondParser extends RegexParsers {
 
-  def parse(source: String) = parseAll(instruction, source)
+  def parse(source: String) = parseAll(instruction, source) match {
+    case Success(result, _) => result
+    case Failure(msg, _) => throw new CrondParseException(msg)
+    case Error(msg, _) => throw new CrondParseException(msg)
+  }
 
   def instruction: Parser[CronExpr] =
     digitInstruction(minDigit) ~ digitInstruction(hourDigit) ~
