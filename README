@@ -1,2 +1,4 @@
 Chronos is a framework which provides scheduling functionality to Scala Class.
-But we haven't been releasing product as first time yet.
+
+But we haven't been released this product yet.
+We only developed classes related CROND parser so far.
