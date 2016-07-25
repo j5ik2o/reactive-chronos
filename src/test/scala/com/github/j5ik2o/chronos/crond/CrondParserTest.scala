@@ -1,11 +1,12 @@
 package com.github.j5ik2o.chronos.crond
 
-import jp.tricreo.baseunits.scala.time.TimePoint
+import org.sisioh.baseunits.scala.time.TimePoint
 import java.util.TimeZone
 import org.scalatest.FunSuite
 
-/**[[CrondParser]]のためのテスト
- */
+/**
+  * [[CrondParser]]のためのテスト
+  */
 class CrondParserTest extends FunSuite {
 
   test("カンマテスト") {

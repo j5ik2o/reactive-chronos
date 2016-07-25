@@ -1,8 +1,6 @@
 package com.github.j5ik2o.chronos.crond
 
-import util.parsing.combinator._
-import java.text.ParseException
-
+import scala.util.parsing.combinator._
 
 // 式を訪問するビジター
 trait ExprVisitor[T] {
@@ -17,13 +15,13 @@ trait Expr {
 }
 
 
-case class NoOp extends Expr
+case class NoOp() extends Expr
 
 case class ValueExpr(digit: Int) extends Expr
 
-case class LastValue extends Expr
+case class LastValue() extends Expr
 
-case class AnyValueExpr extends Expr
+case class AnyValueExpr() extends Expr
 
 case class PerExpr(digit: Expr, option: Expr) extends Expr
 

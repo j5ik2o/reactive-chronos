@@ -1,17 +1,8 @@
 package com.github.j5ik2o.chronos.crond
 
-import jp.tricreo.baseunits.scala.intervals._
-import jp.tricreo.baseunits.scala.time.{TimeOfDay, TimePoint}
+import org.sisioh.baseunits.scala.intervals._
+import org.sisioh.baseunits.scala.time.{TimeOfDay, TimePoint}
 import java.util.{TimeZone, Calendar, Date}
-
-/**
- * Created by IntelliJ IDEA.
- * User: junichi
- * Date: 11/03/28
- * Time: 11:50
- * To change this template use File | Settings | File Templates.
- */
-
 
 class CrondEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefault) extends ExprVisitor[Boolean] {
 

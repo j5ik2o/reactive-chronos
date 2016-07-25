@@ -1,7 +1,7 @@
 package com.github.j5ik2o.chronos.crond
 
 import org.scalatest.FunSuite
-import jp.tricreo.baseunits.scala.time.TimePoint
+import org.sisioh.baseunits.scala.time.TimePoint
 import java.util.TimeZone
 
 /**
