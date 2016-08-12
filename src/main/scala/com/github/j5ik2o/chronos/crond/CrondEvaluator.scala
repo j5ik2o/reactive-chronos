@@ -37,11 +37,11 @@ class CrondEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefau
     //println("now = %d, max = %d".format(now, max))
     def visit(e: Expr) = e match {
       case AnyValueExpr() => true
-      case LastValue() if (now == max) => true
-      case ValueExpr(n) if (now == n) => true
+      case LastValue() if now == max => true
+      case ValueExpr(n) if now == n => true
       case ListExpr(list) => list.exists(_.accept(this))
       case RangeExpr(ValueExpr(start), ValueExpr(end), op) => op match {
-        case NoOp() if (start <= now && now <= end) => true
+        case NoOp() if start <= now && now <= end => true
         case ValueExpr(per) => (start to end by per).exists(_ == now)
         case _ => false
       }
