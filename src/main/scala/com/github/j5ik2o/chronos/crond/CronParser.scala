@@ -33,7 +33,7 @@ case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr, dayOfWeek
 
 case class CrondParseException(message:String) extends Exception(message)
 
-class CrondParser extends RegexParsers {
+class CronParser extends RegexParsers {
 
   def parse(source: String) = parseAll(instruction, source) match {
     case Success(result, _) => result

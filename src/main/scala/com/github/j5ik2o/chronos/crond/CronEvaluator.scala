@@ -1,10 +1,10 @@
 package com.github.j5ik2o.chronos.crond
 
-import org.sisioh.baseunits.scala.intervals._
-import org.sisioh.baseunits.scala.time.{TimeOfDay, TimePoint}
-import java.util.{TimeZone, Calendar, Date}
+import java.util.{ Calendar, TimeZone }
 
-class CrondEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefault) extends ExprVisitor[Boolean] {
+import org.sisioh.baseunits.scala.time.TimePoint
+
+class CronEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefault) extends ExprVisitor[Boolean] {
 
   def visit(e: Expr) = e match {
     case CronExpr(mins, hours, days, months, dayOfWeeks) => {
