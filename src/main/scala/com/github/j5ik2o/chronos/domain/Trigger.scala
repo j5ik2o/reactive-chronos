@@ -2,7 +2,7 @@ package com.github.j5ik2o.chronos.domain
 
 import java.util.UUID
 
-import com.github.j5ik2o.chronos.crond.{ CronParser, CrondCalender, TimePointInterval, TimePointSpecification }
+import com.github.j5ik2o.chronos.cron.{ CronParser, CrondCalender, TimePointInterval, TimePointSpecification }
 import com.github.j5ik2o.chronos.utils.DefaultToStringStyle
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.sisioh.baseunits.scala.intervals.{ Limit, Limitless }
@@ -28,17 +28,17 @@ abstract class Trigger(
 
 object Trigger {
 
-  def ofCron(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, crondExpression: String): Trigger = new Trigger(id, jobId, message) {
+  def ofCron(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, cronExpression: String): Trigger = new Trigger(id, jobId, message) {
     private val crondParser = new CronParser()
-    private val expr = crondParser.parse(crondExpression)
-    private val calendar = new CrondCalender(Clock.now, Limitless[TimePoint](), TimePointSpecification(expr))
+    private val expr = crondParser.parse(cronExpression)
+    private val calendar = new CrondCalender(Clock.now.asCalendarDateTime().asTimePoint(), Limitless[TimePoint](), TimePointSpecification(expr))
 
     override def nextFireTimePoint(current: TimePoint): TimePoint = {
       calendar.plusTimePoint(current, 1)
     }
 
     override def toString: String = toStringBuilder("CronTrigger")
-      .append("crondExpression", crondExpression)
+      .append("cronExpression", cronExpression)
       .build()
 
   }
@@ -56,7 +56,7 @@ object Trigger {
 
   def ofInterval(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, delay: Duration, interval: Duration): Trigger = new Trigger(id, jobId, message) {
 
-    private val timePointInterval = TimePointInterval.everFrom(Limit(Clock.now + delay), interval, unitForMinute = false)
+    private val timePointInterval = TimePointInterval.everFrom(Limit(Clock.now + delay), interval)
 
     private val timePointIntervalIterator = timePointInterval.timesIterator
 

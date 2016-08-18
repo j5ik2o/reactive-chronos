@@ -1,11 +1,11 @@
-package com.github.j5ik2o.chronos.crond
+package com.github.j5ik2o.chronos.cron
 
 import org.sisioh.baseunits.scala.intervals.LimitValue
 import org.sisioh.baseunits.scala.time.{ Duration, TimePoint }
 
 class CrondCalender(startTimePoint: LimitValue[TimePoint], endTimePoint: LimitValue[TimePoint], timePointSpecification: TimePointSpecification = TimePointSpecification.never) {
 
-  def iterator = TimePointInterval.inclusive(startTimePoint, endTimePoint, Duration.minutes(1), unitForMinute = true).timesIterator
+  def iterator = TimePointInterval.inclusive(startTimePoint, endTimePoint, Duration.minutes(1)).timesIterator
 
   def plusTimePoint(currentTimePoint: TimePoint, numberOfMinutes: Int): TimePoint = {
     nextNumberOfTimePoints(currentTimePoint, numberOfMinutes)

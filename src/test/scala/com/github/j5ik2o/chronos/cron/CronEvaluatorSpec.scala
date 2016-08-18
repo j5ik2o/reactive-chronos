@@ -1,4 +1,4 @@
-package com.github.j5ik2o.chronos.crond
+package com.github.j5ik2o.chronos.cron
 
 import java.util.TimeZone
 
@@ -15,7 +15,7 @@ class CronEvaluatorSpec extends FunSpec {
 
       val ast2 = CronExpr(ValueExpr(0), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
       val evaluator2 = new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 1, TimeZone.getDefault))
-      assert(ast2.accept(evaluator2) == false)
+      assert(!ast2.accept(evaluator2))
     }
 
     it("複数の分を評価できること") {

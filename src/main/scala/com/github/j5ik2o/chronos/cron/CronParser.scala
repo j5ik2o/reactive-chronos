@@ -1,4 +1,4 @@
-package com.github.j5ik2o.chronos.crond
+package com.github.j5ik2o.chronos.cron
 
 import scala.util.parsing.combinator._
 
