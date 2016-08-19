@@ -18,31 +18,30 @@ class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLi
   val schedulerId = UUID.randomUUID()
   val scheduler = system.actorOf(Scheduler.props(schedulerId), name = Scheduler.name(schedulerId))
 
-  def jobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
+  private def jobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
     override def receive: Receive = {
       case JobProtocol.Start(_, message) =>
         log.debug(message.toString)
-        val response = JobProtocol.Finish(UUID.randomUUID(), Success())
+        val response = JobProtocol.Finish(UUID.randomUUID(), Success(()))
         sender() ! response
         probeRef ! message.toString
       // context.stop(self)
     }
   })
 
-  def longTimeJobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
+  private def longTimeJobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
     override def receive: Receive = {
       case JobProtocol.Start(_, message) =>
         log.debug(message.toString)
         Thread.sleep(5 * 1000)
-        val response = JobProtocol.Finish(UUID.randomUUID(), Success())
+        val response = JobProtocol.Finish(UUID.randomUUID(), Success(()))
         sender() ! response
         probeRef ! message.toString
       // context.stop(self)
     }
   })
 
-
-  def errorJobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
+  private def errorJobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
     override def receive: Receive = {
       case message =>
         sys.error("test")

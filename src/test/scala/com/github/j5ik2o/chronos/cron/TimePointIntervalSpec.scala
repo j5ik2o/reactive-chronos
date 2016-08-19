@@ -7,11 +7,13 @@ import org.sisioh.baseunits.scala.timeutil.Clock
 
 class TimePointIntervalSpec extends FunSpec {
   describe("TimePointInterval") {
-    it("seq") {
-      val start: TimePoint = Clock.now
+    it("stream") {
+      val start: TimePoint = TimePoint.at(2016, 1, 1, 0, 0, 0, 0)
       val end: TimePoint = start + Duration.minutes(1)
       val interval = TimePointInterval.inclusive(Limit(start), Limit(end), Duration.seconds(2))
-      interval.timesIterator.toList.foreach(println)
+      val list = interval.timesIterator.toList
+      assert(list.head == start)
+      assert(list.last == end)
     }
   }
 }

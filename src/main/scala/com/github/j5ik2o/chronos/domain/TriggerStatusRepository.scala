@@ -24,7 +24,7 @@ case class TriggerStatusRepository(entities: Map[UUID, TriggerStatus] = Map.empt
     entities(id)
   }
 
-  def resolveByTriggerId(triggerId: UUID): Try[TriggerStatus] = Try{
+  def resolveByTriggerId(triggerId: UUID): Try[TriggerStatus] = Try {
     iterator.find(e => e.triggerId == triggerId).get
   }
 

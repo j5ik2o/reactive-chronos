@@ -5,12 +5,12 @@ import java.time.ZoneId
 import org.sisioh.baseunits.scala.intervals.{ Interval, Limit, LimitValue, Limitless }
 import org.sisioh.baseunits.scala.time._
 
-class TimePointInterval  protected (
-                                     startValue: LimitValue[TimePoint],
-                                     endValue:   LimitValue[TimePoint],
-                                     interval: Duration
-                                   )
-  extends Interval[TimePoint](startValue, true, endValue, true) with Serializable {
+class TimePointInterval protected (
+  startValue: LimitValue[TimePoint],
+  endValue:   LimitValue[TimePoint],
+  interval:   Duration
+)
+    extends Interval[TimePoint](startValue, true, endValue, true) with Serializable {
 
   lazy val timesIterator: Iterator[TimePoint] = {
     if (!hasLowerLimit) {
@@ -27,7 +27,7 @@ class TimePointInterval  protected (
       override def hasNext = {
         end match {
           case _: Limitless[TimePoint] => true
-          case Limit(v)                 => !_next.toValue.isAfter(v)
+          case Limit(v)                => !_next.toValue.isAfter(v)
         }
       }
 
@@ -57,7 +57,7 @@ class TimePointInterval  protected (
       override def hasNext = {
         end match {
           case _: Limitless[TimePoint] => true
-          case Limit(v)                 => !_next.toValue.isBefore(v)
+          case Limit(v)                => !_next.toValue.isBefore(v)
         }
       }
 

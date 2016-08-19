@@ -17,7 +17,7 @@ case class DefaultToStringStyle(prefix: String) extends ToStringStyle() {
 
   override def appendFieldStart(buffer: StringBuffer, fieldName: String): Unit = {
     val cur = DefaultToStringStyle.level.get
-    (0 until cur).foreach{ _ =>
+    (0 until cur).foreach { _ =>
       buffer.append(DefaultToStringStyle.INDENT)
     }
     super.appendFieldStart(buffer, fieldName)
@@ -33,7 +33,7 @@ case class DefaultToStringStyle(prefix: String) extends ToStringStyle() {
   override def appendContentEnd(buffer: StringBuffer): Unit = {
     buffer.append(SystemUtils.LINE_SEPARATOR)
     val cur = DefaultToStringStyle.level.get
-    (0 until cur).foreach{ _ =>
+    (0 until cur).foreach { _ =>
       buffer.append(DefaultToStringStyle.INDENT)
     }
     buffer.append(")")

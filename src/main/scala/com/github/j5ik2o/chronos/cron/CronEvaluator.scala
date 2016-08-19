@@ -5,7 +5,7 @@ import java.util.{ Calendar, TimeZone }
 
 import org.sisioh.baseunits.scala.time.TimePoint
 
-class CronEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefault) extends ExprVisitor[Boolean] {
+class CronEvaluator(timePoint: TimePoint, timeZone: TimeZone = TimeZone.getDefault) extends ExprVisitor[Boolean] {
 
   val Mapping = Map(
     java.time.DayOfWeek.SUNDAY -> Calendar.SUNDAY,
@@ -27,23 +27,22 @@ class CronEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefaul
       val monthMax = dateTime.getMonth.maxLength()
       val dayOfWeek = Mapping(dateTime.getDayOfWeek)
 
-
       val minMax = 59
       val hourMax = 23
       val dayMax = dateTime.`with`(TemporalAdjusters.lastDayOfMonth()).getDayOfMonth
       val dayOfWeekMax = 7
-//      val calendar = timePoint.asJavaCalendar(timeZone)
-//      val min = calendar.get(Calendar.MINUTE)
-//      val hour = calendar.get(Calendar.HOUR_OF_DAY)
-//      val day = calendar.get(Calendar.DATE)
-//      val month = calendar.get(Calendar.MONTH) + 1
-//      val monthMax = calendar.getActualMaximum(Calendar.MONTH)
-//      val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+      //      val calendar = timePoint.asJavaCalendar(timeZone)
+      //      val min = calendar.get(Calendar.MINUTE)
+      //      val hour = calendar.get(Calendar.HOUR_OF_DAY)
+      //      val day = calendar.get(Calendar.DATE)
+      //      val month = calendar.get(Calendar.MONTH) + 1
+      //      val monthMax = calendar.getActualMaximum(Calendar.MONTH)
+      //      val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
 
-//      val minMax = calendar.getActualMaximum(Calendar.MINUTE)
-//      val hourMax = calendar.getActualMaximum(Calendar.HOUR_OF_DAY)
-//      val dayMax = calendar.getActualMaximum(Calendar.DATE)
-//      val dayOfWeekMax = calendar.getActualMaximum(Calendar.DAY_OF_WEEK)
+      //      val minMax = calendar.getActualMaximum(Calendar.MINUTE)
+      //      val hourMax = calendar.getActualMaximum(Calendar.HOUR_OF_DAY)
+      //      val dayMax = calendar.getActualMaximum(Calendar.DATE)
+      //      val dayOfWeekMax = calendar.getActualMaximum(Calendar.DAY_OF_WEEK)
 
       val m = mins.accept(ExpressionEvaluator(min, minMax))
       val h = hours.accept(ExpressionEvaluator(hour, hourMax))
@@ -60,17 +59,17 @@ class CronEvaluator(timePoint: TimePoint, timeZone:TimeZone = TimeZone.getDefaul
   case class ExpressionEvaluator(now: Int, max: Int) extends ExprVisitor[Boolean] {
     //println("now = %d, max = %d".format(now, max))
     def visit(e: Expr) = e match {
-      case AnyValueExpr() => true
+      case AnyValueExpr()            => true
       case LastValue() if now == max => true
-      case ValueExpr(n) if now == n => true
-      case ListExpr(list) => list.exists(_.accept(this))
+      case ValueExpr(n) if now == n  => true
+      case ListExpr(list)            => list.exists(_.accept(this))
       case RangeExpr(ValueExpr(start), ValueExpr(end), op) => op match {
         case NoOp() if start <= now && now <= end => true
-        case ValueExpr(per) => (start to end by per).exists(_ == now)
-        case _ => false
+        case ValueExpr(per)                       => (start to end by per).exists(_ == now)
+        case _                                    => false
       }
       case PerExpr(AnyValueExpr(), ValueExpr(per)) => (0 until max by per).exists(_ == now)
-      case _ => false
+      case _                                       => false
     }
   }
 

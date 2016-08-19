@@ -43,9 +43,11 @@ object SchedulerProtocol {
         .append("requestId", requestId)
   }
 
-  case class CircuitBreakSettings(maxFailures: Int,
-                                  callTimeout: BDuration,
-                                  resetTimeout: BDuration)
+  case class CircuitBreakSettings(
+    maxFailures:  Int,
+    callTimeout:  BDuration,
+    resetTimeout: BDuration
+  )
 
   case class ScheduleJob(id: UUID = UUID.randomUUID(), job: Job, triggers: Seq[Trigger], circuitBreakSettings: Option[CircuitBreakSettings] = None) extends CommandRequest {
     override protected def toStringBuilder: ToStringBuilder =
@@ -70,7 +72,6 @@ object SchedulerProtocol {
 
 }
 
-
 object Scheduler {
   def name(id: UUID): String = s"scheduler-$id"
 
@@ -94,7 +95,7 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
   implicit val materializer = ActorMaterializer()
 
   val otherwise: Receive = {
-    case v@SchedulerProtocol.ScheduleJob(_, job, triggers, circuitBreakSettings) =>
+    case v @ SchedulerProtocol.ScheduleJob(_, job, triggers, circuitBreakSettings) =>
       log.debug("Job Scheduled: job = {}, triggers = {}", job, triggers)
       jobRepository = jobRepository.store(job).get
       triggerRepository = triggerRepository.storeMulti(triggers).get
@@ -132,11 +133,11 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
       context.become(stoppedWithOtherwise)
       maybeNextTimePointCancellable.foreach(_.cancel())
       maybeNextTimePointCancellable = None
-    case msg@JobControllerProtocol.Started(_, _, JobControlContext(job, trigger, jobStatus, triggerStatus)) =>
+    case msg @ JobControllerProtocol.Started(_, _, JobControlContext(job, trigger, jobStatus, triggerStatus)) =>
       log.debug("Job Started = {}", msg)
       jobStatusRepository = jobStatusRepository.store(jobStatus).get
       triggerStatusRepository = triggerStatusRepository.store(triggerStatus).get
-    case msg@JobControllerProtocol.Finished(_, _, JobControlContext(job, trigger, jobStatus, triggerStatus)) =>
+    case msg @ JobControllerProtocol.Finished(_, _, JobControlContext(job, trigger, jobStatus, triggerStatus)) =>
       log.debug("Job Finished = {}", msg)
       jobStatusRepository = jobStatusRepository.store(jobStatus).get
       triggerStatusRepository = triggerStatusRepository.store(triggerStatus).get
@@ -147,7 +148,7 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
         val maybeJobStatus = resolveJobStatus(job.id)
         //log.debug("trigger = {}", trigger)
         if (!job.startBeforeFinished && maybeJobStatus.exists(_.running)) {
-        } else if (trigger.nextFireTimePoint.millisecondsFromEpoc <=  now.millisecondsFromEpoc) {
+        } else if (trigger.nextFireTimePoint.millisecondsFromEpoc <= now.millisecondsFromEpoc) {
           log.debug("fire job = {}, trigger = {}", job, trigger)
           val jobStatus = JobStatus(UUID.randomUUID(), job.id, running = true)
           val triggerStatus = TriggerStatus(UUID.randomUUID(), job.id, trigger.id, trigger.nextFireTimePoint, Some(Clock.now))
@@ -156,16 +157,16 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
           jobStatusRepository = jobStatusRepository.store(jobStatus).get
           triggerStatusRepository = triggerStatusRepository.store(triggerStatus).get
 
-          val sink = jobControllerSinks.getOrElseUpdate(job.id,
+          val sink = jobControllerSinks.getOrElseUpdate(
+            job.id,
             Sink.actorSubscriber[JobControllerProtocol.Message](
-              JobController.props(UUID.randomUUID(), self, JobControlContext(job, trigger, jobStatus, triggerStatus), 3 seconds)
+              JobController.props(UUID.randomUUID(), self, JobControlContext(job, trigger, jobStatus, triggerStatus))
             )
           )
           Source.single(JobControllerProtocol.Start(UUID.randomUUID())).runWith(sink)
         }
       }
   }
-
 
   def startedWithOtherwise = started orElse otherwise
 

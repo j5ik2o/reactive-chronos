@@ -3,11 +3,11 @@ package com.github.j5ik2o.chronos.cron
 import java.util.TimeZone
 
 import org.scalatest.FunSpec
-import org.sisioh.baseunits.scala.time.TimePoint
+import org.sisioh.baseunits.scala.time.{ TimePoint, ZoneIds }
 
 /**
-  * [[CronParser]]のためのテスト
-  */
+ * [[CronParser]]のためのテスト
+ */
 class CronParserSpec extends FunSpec {
 
   describe("CronParser") {
@@ -21,7 +21,7 @@ class CronParserSpec extends FunSpec {
         }
       }
 
-      val evaluator = new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 1, TimeZone.getDefault))
+      val evaluator = new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 1, ZoneIds.Default))
       assert(result.accept(evaluator))
     }
 
@@ -31,12 +31,11 @@ class CronParserSpec extends FunSpec {
       assert {
         result match {
           case CronExpr(RangeExpr(ValueExpr(1), ValueExpr(3), NoOp()), ValueExpr(1), ValueExpr(1),
-          ValueExpr(1), AnyValueExpr()) => true
+            ValueExpr(1), AnyValueExpr()) => true
           case _ => false
         }
       }
     }
-
 
     it("分の解析処理ができること") {
       val p = new CronParser
@@ -50,7 +49,6 @@ class CronParserSpec extends FunSpec {
         }
       }
     }
-
 
     it("時の解析処理ができること") {
       val p = new CronParser

@@ -38,5 +38,4 @@ object JobStatusRepository {
     }
   }
 
-
 }

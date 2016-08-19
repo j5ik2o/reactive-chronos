@@ -12,7 +12,7 @@ object TimePointSpecification {
   }
 
   def apply(expr: Expr): TimePointSpecification = new TimePointSpecification(expr) {
-    override def isSatisfiedBy(t: TimePoint): Boolean  = new CronEvaluator(t).visit(expr)
+    override def isSatisfiedBy(t: TimePoint): Boolean = new CronEvaluator(t).visit(expr)
   }
 
 }

@@ -10,10 +10,10 @@ import org.sisioh.baseunits.scala.time.{ Duration, TimePoint }
 import org.sisioh.baseunits.scala.timeutil.Clock
 
 abstract class Trigger(
-                        val id: UUID,
-                        val jobId: UUID,
-                        val message: Any
-                      ) {
+    val id:      UUID,
+    val jobId:   UUID,
+    val message: Any
+) {
   val nextFireTimePoint: TimePoint
 
   protected def toStringBuilder(prefix: String): ToStringBuilder = new ToStringBuilder(this, DefaultToStringStyle.ofString(prefix))
@@ -31,7 +31,7 @@ abstract class Trigger(
 }
 
 case class CronTrigger(override val id: UUID, override val jobId: UUID, override val message: Any, cronExpression: String)
-  extends Trigger(id, jobId, message) {
+    extends Trigger(id, jobId, message) {
   private val expr = new CronParser().parse(cronExpression)
   private val calendar = new CrondCalender(
     Clock.now.asCalendarDateTime().asTimePoint(), Limitless[TimePoint](), TimePointSpecification(expr)
@@ -51,7 +51,7 @@ case class CronTrigger(override val id: UUID, override val jobId: UUID, override
 }
 
 case class DelayTrigger(override val id: UUID, override val jobId: UUID, override val message: Any, delay: Duration)
-  extends Trigger(id, jobId, message) {
+    extends Trigger(id, jobId, message) {
 
   private val start = Clock.now
 
@@ -68,7 +68,7 @@ case class DelayTrigger(override val id: UUID, override val jobId: UUID, overrid
 }
 
 case class IntervalTrigger(override val id: UUID, override val jobId: UUID, override val message: Any, delay: Duration, interval: Duration)
-  extends Trigger(id, jobId, message) {
+    extends Trigger(id, jobId, message) {
   private val timePointInterval = TimePointInterval.everFrom(Limit(Clock.now + delay), interval)
 
   private val timePointIntervalIterator = timePointInterval.timesIterator
@@ -78,10 +78,12 @@ case class IntervalTrigger(override val id: UUID, override val jobId: UUID, over
   override val nextFireTimePoint: TimePoint = getNextFireTimePoint
 
   override def getNextFireTimePoint(current: TimePoint): TimePoint = {
+    // scalastyle:off
     val result = cursor
     while (cursor.millisecondsFromEpoc <= current.millisecondsFromEpoc) {
       cursor = timePointIntervalIterator.next()
     }
+    // scalastyle:on
     result
   }
 
@@ -93,7 +95,6 @@ case class IntervalTrigger(override val id: UUID, override val jobId: UUID, over
     .build()
 
 }
-
 
 object Trigger {
 

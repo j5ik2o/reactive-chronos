@@ -8,14 +8,15 @@ import org.sisioh.baseunits.scala.time.TimePoint
 
 import scala.util.Try
 
-case class TriggerStatus(id: UUID,
-                         jobId: UUID,
-                         triggerId: UUID,
-                         computedFireAt: TimePoint,
-                         startedAt: Option[TimePoint] = None,
-                         finishedAt: Option[TimePoint] = None,
-                         result: Option[Try[Any]] = None) {
-
+case class TriggerStatus(
+    id:             UUID,
+    jobId:          UUID,
+    triggerId:      UUID,
+    computedFireAt: TimePoint,
+    startedAt:      Option[TimePoint] = None,
+    finishedAt:     Option[TimePoint] = None,
+    result:         Option[Try[Any]]  = None
+) {
 
   def isStarted(now: TimePoint): Boolean =
     startedAt.exists(_.isAfter(now))
@@ -29,8 +30,8 @@ case class TriggerStatus(id: UUID,
       .append("jobId", jobId)
       .append("triggerId", triggerId)
       .append("computedFireAt", computedFireAt.toString("yyyy/MM/dd HH:mm:ss.S"))
-      .append("startedAt", startedAt.map{_.toString("yyyy/MM/dd HH:mm:ss.S")})
-      .append("finishedAt", finishedAt.map{_.toString("yyyy/MM/dd HH:mm:ss.S")})
+      .append("startedAt", startedAt.map { _.toString("yyyy/MM/dd HH:mm:ss.S") })
+      .append("finishedAt", finishedAt.map { _.toString("yyyy/MM/dd HH:mm:ss.S") })
       .append("result", result)
       .build
 }

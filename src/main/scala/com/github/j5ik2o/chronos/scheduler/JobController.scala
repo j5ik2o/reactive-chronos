@@ -3,17 +3,16 @@ package com.github.j5ik2o.chronos.scheduler
 import java.util.UUID
 
 import akka.actor.SupervisorStrategy.Stop
-import akka.actor.{ Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, SupervisorStrategy }
+import akka.actor.{ ActorLogging, ActorRef, OneForOneStrategy, Props, SupervisorStrategy }
 import akka.stream.actor.ActorSubscriberMessage.OnNext
 import akka.stream.actor.{ ActorSubscriber, MaxInFlightRequestStrategy, RequestStrategy }
-import com.github.j5ik2o.chronos.domain.{ Job, Trigger }
 import com.github.j5ik2o.chronos.utils.DefaultToStringStyle
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.sisioh.baseunits.scala.timeutil.Clock
 
+import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
 import scala.util.Failure
-
 
 object JobControllerProtocol {
 
@@ -57,24 +56,25 @@ object JobControllerProtocol {
 
 }
 
-
 object JobController {
   def name(id: UUID): String = s"job-controller-$id"
 
-  def props(id: UUID, schedulerRef: ActorRef, jobControlContext: JobControlContext, timeout: Duration): Props =
-    Props(new JobController(id, schedulerRef, jobControlContext, timeout))
+  def props(id: UUID, schedulerRef: ActorRef, jobControlContext: JobControlContext, maxBufferSize: Int = 100, timeout: Duration = 3 seconds): Props =
+    Props(new JobController(id, schedulerRef, jobControlContext, maxBufferSize, timeout))
 }
 
-class JobController(id: UUID,
-                    schedulerRef: ActorRef,
-                    jobControlContext: JobControlContext,
-                    timeout: Duration)
-  extends ActorSubscriber with ActorLogging {
+class JobController(
+  id:                UUID,
+  schedulerRef:      ActorRef,
+  jobControlContext: JobControlContext,
+  maxBufferSize:     Int,
+  timeout:           Duration
+)
+    extends ActorSubscriber with ActorLogging {
 
-  val MaxBufferSize = 100
   var buffer = Map.empty[UUID, JobControllerProtocol.Message]
 
-  override protected def requestStrategy: RequestStrategy = new MaxInFlightRequestStrategy(MaxBufferSize) {
+  override protected def requestStrategy: RequestStrategy = new MaxInFlightRequestStrategy(maxBufferSize) {
     override def inFlightInternally: Int = buffer.size
   }
 
@@ -90,12 +90,14 @@ class JobController(id: UUID,
           jobControlContext.triggerStatus.copy(finishedAt = Some(Clock.now), result = Some(Failure(ex)))
         )
       )
+      log.debug("Job Finished = {}", jobControlContext.job)
       Stop
   }
 
   def started(requestId: UUID): Receive = {
     case JobProtocol.Finish(_, result) =>
       log.debug("Job Finish = {}", jobControlContext.job)
+      context.unbecome()
       schedulerRef ! JobControllerProtocol.Finished(
         UUID.randomUUID(),
         Some(requestId),
@@ -107,12 +109,11 @@ class JobController(id: UUID,
         )
       )
       buffer -= requestId
-      context.unbecome()
+      log.debug("Job Finished = {}", jobControlContext.job)
   }
 
-
   override def receive: Receive = {
-    case OnNext(msg@JobControllerProtocol.Start(id)) =>
+    case OnNext(msg @ JobControllerProtocol.Start(id)) =>
       log.debug("Job Start = {}", jobControlContext.job)
       context.become(started(id))
       context.child(jobControlContext.job.name).fold(context.actorOf(jobControlContext.job.jobProps, name = jobControlContext.job.name) ! JobProtocol.Start(UUID.randomUUID(), jobControlContext.trigger.message)) {

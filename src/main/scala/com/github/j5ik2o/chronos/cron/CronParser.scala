@@ -14,7 +14,6 @@ trait Expr {
   }
 }
 
-
 case class NoOp() extends Expr
 
 case class ValueExpr(digit: Int) extends Expr
@@ -31,35 +30,34 @@ case class ListExpr(exprs: List[Expr]) extends Expr
 
 case class CronExpr(mins: Expr, hours: Expr, days: Expr, months: Expr, dayOfWeeks: Expr) extends Expr
 
-case class CrondParseException(message:String) extends Exception(message)
+case class CrondParseException(message: String) extends Exception(message)
 
 class CronParser extends RegexParsers {
 
   def parse(source: String) = parseAll(instruction, source) match {
     case Success(result, _) => result
-    case Failure(msg, _) => throw new CrondParseException(msg)
-    case Error(msg, _) => throw new CrondParseException(msg)
+    case Failure(msg, _)    => throw new CrondParseException(msg)
+    case Error(msg, _)      => throw new CrondParseException(msg)
   }
 
   def instruction: Parser[CronExpr] =
     digitInstruction(minDigit) ~ digitInstruction(hourDigit) ~
       digitInstruction(dayDigit) ~ digitInstruction(monthDigit) ~
       digitInstruction(dayOfWeekDigit | dayOfWeekText) ^^ {
-      case mins ~ hours ~ days ~ months ~ dayOfWeeks => CronExpr(mins, hours, days, months, dayOfWeeks)
-    }
+        case mins ~ hours ~ days ~ months ~ dayOfWeeks => CronExpr(mins, hours, days, months, dayOfWeeks)
+      }
 
   def digitInstruction(digit: => Parser[Expr]) = asterisk ||| list(digit ||| range(digit)) ||| range(digit) ||| asteriskPer(digit)
 
-
   def list(digit: => Parser[Expr]) = repsep(digit, ",") ^^ {
     case x :: Nil => x
-    case l => ListExpr(l)
+    case l        => ListExpr(l)
   }
 
   def per(digit: => Parser[Expr]) = "/" ~> digit
 
   def rangePer(digit: => Parser[Expr]) = opt(per(digit)) ^^ {
-    case None => NoOp()
+    case None    => NoOp()
     case Some(d) => d
   }
 
@@ -120,7 +118,6 @@ class CronParser extends RegexParsers {
     } ||| LAST ^^ {
       case _ => LastValue()
     }
-
 
   lazy val asterisk: Parser[Expr] = """[*]""".r ^^ {
     case asterisk => AnyValueExpr()
