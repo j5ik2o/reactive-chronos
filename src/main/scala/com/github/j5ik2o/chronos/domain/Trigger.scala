@@ -14,68 +14,94 @@ abstract class Trigger(
                         val jobId: UUID,
                         val message: Any
                       ) {
+  val nextFireTimePoint: TimePoint
 
   protected def toStringBuilder(prefix: String): ToStringBuilder = new ToStringBuilder(this, DefaultToStringStyle.ofString(prefix))
     .append("id", id)
     .append("jobId", jobId)
     .append("message", message)
+    .append("nextFireTimePoint", nextFireTimePoint.toString("yyyy/MM/dd HH:mm:ss.S"))
 
-  def nextFireTimePoint: TimePoint = nextFireTimePoint(Clock.now)
+  def getNextFireTimePoint: TimePoint = getNextFireTimePoint(Clock.now)
 
-  def nextFireTimePoint(current: TimePoint): TimePoint
+  def getNextFireTimePoint(current: TimePoint): TimePoint
+
+  def recreate: Trigger
 
 }
 
+case class CronTrigger(override val id: UUID, override val jobId: UUID, override val message: Any, cronExpression: String)
+  extends Trigger(id, jobId, message) {
+  private val expr = new CronParser().parse(cronExpression)
+  private val calendar = new CrondCalender(
+    Clock.now.asCalendarDateTime().asTimePoint(), Limitless[TimePoint](), TimePointSpecification(expr)
+  )
+
+  override lazy val nextFireTimePoint: TimePoint = getNextFireTimePoint
+
+  override def getNextFireTimePoint(current: TimePoint): TimePoint =
+    calendar.plusTimePoint(current, 1)
+
+  override def toString: String = toStringBuilder("CronTrigger")
+    .append("cronExpression", cronExpression)
+    .build()
+
+  override def recreate: CronTrigger = copy()
+
+}
+
+case class DelayTrigger(override val id: UUID, override val jobId: UUID, override val message: Any, delay: Duration)
+  extends Trigger(id, jobId, message) {
+
+  private val start = Clock.now
+
+  override lazy val nextFireTimePoint: TimePoint = getNextFireTimePoint
+
+  override def getNextFireTimePoint(current: TimePoint): TimePoint = start + delay
+
+  override def toString: String = toStringBuilder("DelayTrigger")
+    .append("delay", delay)
+    .build()
+
+  override def recreate: DelayTrigger = copy()
+
+}
+
+case class IntervalTrigger(override val id: UUID, override val jobId: UUID, override val message: Any, delay: Duration, interval: Duration)
+  extends Trigger(id, jobId, message) {
+  private val timePointInterval = TimePointInterval.everFrom(Limit(Clock.now + delay), interval)
+
+  private val timePointIntervalIterator = timePointInterval.timesIterator
+
+  private var cursor = timePointIntervalIterator.next
+
+  override val nextFireTimePoint: TimePoint = getNextFireTimePoint
+
+  override def getNextFireTimePoint(current: TimePoint): TimePoint = {
+    val result = cursor
+    while (cursor.millisecondsFromEpoc <= current.millisecondsFromEpoc) {
+      cursor = timePointIntervalIterator.next()
+    }
+    result
+  }
+
+  override def recreate: IntervalTrigger = copy()
+
+  override def toString: String = toStringBuilder("IntervalTrigger")
+    .append("delay", delay)
+    .append("interval", interval)
+    .build()
+
+}
+
+
 object Trigger {
 
-  def ofCron(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, cronExpression: String): Trigger = new Trigger(id, jobId, message) {
-    private val crondParser = new CronParser()
-    private val expr = crondParser.parse(cronExpression)
-    private val calendar = new CrondCalender(Clock.now.asCalendarDateTime().asTimePoint(), Limitless[TimePoint](), TimePointSpecification(expr))
+  def ofCron(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, cronExpression: String): CronTrigger = CronTrigger(id, jobId, message, cronExpression)
 
-    override def nextFireTimePoint(current: TimePoint): TimePoint = {
-      calendar.plusTimePoint(current, 1)
-    }
+  def ofDelay(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, delay: Duration): DelayTrigger = DelayTrigger(id, jobId, message, delay)
 
-    override def toString: String = toStringBuilder("CronTrigger")
-      .append("cronExpression", cronExpression)
-      .build()
-
-  }
-
-  def ofDelay(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, delay: Duration): Trigger = new Trigger(id, jobId, message) {
-    val start = Clock.now
-
-    override def nextFireTimePoint(current: TimePoint): TimePoint = start + delay
-
-    override def toString: String = toStringBuilder("DelayTrigger")
-      .append("delay", delay)
-      .build()
-
-  }
-
-  def ofInterval(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, delay: Duration, interval: Duration): Trigger = new Trigger(id, jobId, message) {
-
-    private val timePointInterval = TimePointInterval.everFrom(Limit(Clock.now + delay), interval)
-
-    private val timePointIntervalIterator = timePointInterval.timesIterator
-
-    private var cursor = timePointIntervalIterator.next
-
-    override def nextFireTimePoint(current: TimePoint): TimePoint = {
-      val result = cursor
-      while (cursor.millisecondsFromEpoc <= current.millisecondsFromEpoc) {
-        cursor = timePointIntervalIterator.next()
-      }
-      result
-    }
-
-    override def toString: String = toStringBuilder("IntervalTrigger")
-      .append("delay", delay)
-      .append("interval", interval)
-      .build()
-
-  }
+  def ofInterval(id: UUID = UUID.randomUUID(), jobId: UUID, message: Any, delay: Duration, interval: Duration): IntervalTrigger = IntervalTrigger(id, jobId, message, delay, interval)
 
 }
 

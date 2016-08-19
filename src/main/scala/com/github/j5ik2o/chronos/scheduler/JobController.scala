@@ -4,6 +4,8 @@ import java.util.UUID
 
 import akka.actor.SupervisorStrategy.Stop
 import akka.actor.{ Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, SupervisorStrategy }
+import akka.stream.actor.ActorSubscriberMessage.OnNext
+import akka.stream.actor.{ ActorSubscriber, MaxInFlightRequestStrategy, RequestStrategy }
 import com.github.j5ik2o.chronos.domain.{ Job, Trigger }
 import com.github.j5ik2o.chronos.utils.DefaultToStringStyle
 import org.apache.commons.lang3.builder.ToStringBuilder
@@ -41,19 +43,15 @@ object JobControllerProtocol {
 
   case class Start(id: UUID = UUID.randomUUID()) extends CommandRequest
 
-  case class Started(id: UUID, requestId: Option[UUID], job: Job, trigger: Trigger, jobControlContext: JobControlContext) extends CommandResponse {
+  case class Started(id: UUID, requestId: Option[UUID], jobControlContext: JobControlContext) extends CommandResponse {
     override protected val toStringBuilder: ToStringBuilder =
       new ToStringBuilder(this, DefaultToStringStyle.ofClass(getClass))
-        .append("job", job)
-        .append("trigger", trigger)
         .append("jobControllerContext", jobControlContext)
   }
 
-  case class Finished(id: UUID, requestId: Option[UUID], job: Job, trigger: Trigger, jobControlContext: JobControlContext) extends CommandResponse {
+  case class Finished(id: UUID, requestId: Option[UUID], jobControlContext: JobControlContext) extends CommandResponse {
     override protected val toStringBuilder: ToStringBuilder =
       new ToStringBuilder(this, DefaultToStringStyle.ofClass(getClass))
-        .append("job", job)
-        .append("trigger", trigger)
         .append("jobControllerContext", jobControlContext)
   }
 
@@ -63,21 +61,31 @@ object JobControllerProtocol {
 object JobController {
   def name(id: UUID): String = s"job-controller-$id"
 
-  def props(id: UUID, schedulerRef: ActorRef, job: Job, trigger: Trigger, jobControlContext: JobControlContext, timeout: Duration): Props =
-    Props(new JobController(id, schedulerRef, job, trigger, jobControlContext, timeout))
+  def props(id: UUID, schedulerRef: ActorRef, jobControlContext: JobControlContext, timeout: Duration): Props =
+    Props(new JobController(id, schedulerRef, jobControlContext, timeout))
 }
 
-class JobController(id: UUID, schedulerRef: ActorRef, job: Job, trigger: Trigger, jobControlContext: JobControlContext, timeout: Duration)
-  extends Actor with ActorLogging {
+class JobController(id: UUID,
+                    schedulerRef: ActorRef,
+                    jobControlContext: JobControlContext,
+                    timeout: Duration)
+  extends ActorSubscriber with ActorLogging {
+
+  val MaxBufferSize = 100
+  var buffer = Map.empty[UUID, JobControllerProtocol.Message]
+
+  override protected def requestStrategy: RequestStrategy = new MaxInFlightRequestStrategy(MaxBufferSize) {
+    override def inFlightInternally: Int = buffer.size
+  }
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy() {
     case ex: Exception =>
       schedulerRef ! JobControllerProtocol.Finished(
         UUID.randomUUID(),
         None,
-        job,
-        trigger,
         JobControlContext(
+          jobControlContext.job,
+          jobControlContext.trigger,
           jobControlContext.jobStatus.copy(running = false),
           jobControlContext.triggerStatus.copy(finishedAt = Some(Clock.now), result = Some(Failure(ex)))
         )
@@ -85,39 +93,43 @@ class JobController(id: UUID, schedulerRef: ActorRef, job: Job, trigger: Trigger
       Stop
   }
 
-  def started(sender: ActorRef, requestId: UUID): Receive = {
+  def started(requestId: UUID): Receive = {
     case JobProtocol.Finish(_, result) =>
-      sender ! JobControllerProtocol.Finished(
+      log.debug("Job Finish = {}", jobControlContext.job)
+      schedulerRef ! JobControllerProtocol.Finished(
         UUID.randomUUID(),
         Some(requestId),
-        job,
-        trigger,
         JobControlContext(
+          jobControlContext.job,
+          jobControlContext.trigger,
           jobControlContext.jobStatus.copy(running = false),
           jobControlContext.triggerStatus.copy(finishedAt = Some(Clock.now), result = Some(result))
         )
       )
-
+      buffer -= requestId
+      context.unbecome()
   }
 
 
   override def receive: Receive = {
-    case JobControllerProtocol.Start(id) =>
-      log.debug("Job Start = {}", job)
-      context.become(started(sender(), id))
-      context.child(job.name).fold(context.actorOf(job.jobProps, name = job.name) ! JobProtocol.Start(UUID.randomUUID(), trigger.message)) {
-        _ ! JobProtocol.Start(UUID.randomUUID(), trigger.message)
+    case OnNext(msg@JobControllerProtocol.Start(id)) =>
+      log.debug("Job Start = {}", jobControlContext.job)
+      context.become(started(id))
+      context.child(jobControlContext.job.name).fold(context.actorOf(jobControlContext.job.jobProps, name = jobControlContext.job.name) ! JobProtocol.Start(UUID.randomUUID(), jobControlContext.trigger.message)) {
+        _ ! JobProtocol.Start(UUID.randomUUID(), jobControlContext.trigger.message)
       }
-      sender() ! JobControllerProtocol.Started(
+      buffer += (id -> msg)
+      schedulerRef ! JobControllerProtocol.Started(
         UUID.randomUUID(),
         Some(id),
-        job,
-        trigger,
         JobControlContext(
+          jobControlContext.job,
+          jobControlContext.trigger,
           jobControlContext.jobStatus,
           jobControlContext.triggerStatus.copy(startedAt = Some(Clock.now))
         )
       )
-      log.debug("Job Started = {}", job)
+      log.debug("Job Started = {}", jobControlContext.job)
   }
+
 }

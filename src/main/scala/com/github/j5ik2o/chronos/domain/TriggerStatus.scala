@@ -28,9 +28,9 @@ case class TriggerStatus(id: UUID,
       .append("id", id)
       .append("jobId", jobId)
       .append("triggerId", triggerId)
-      .append("computedFireAt", computedFireAt)
-      .append("startedAt", startedAt)
-      .append("finishedAt", finishedAt)
+      .append("computedFireAt", computedFireAt.toString("yyyy/MM/dd HH:mm:ss.S"))
+      .append("startedAt", startedAt.map{_.toString("yyyy/MM/dd HH:mm:ss.S")})
+      .append("finishedAt", finishedAt.map{_.toString("yyyy/MM/dd HH:mm:ss.S")})
       .append("result", result)
       .build
 }
