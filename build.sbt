@@ -1,6 +1,47 @@
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import org.scalastyle.sbt.ScalastylePlugin._
+import scalariform.formatter.preferences._
+
+
+val compileScalaStyle = taskKey[Unit]("compileScalaStyle")
+
+lazy val scalaStyleSettings = Seq(
+  (scalastyleConfig in Compile) := file("scalastyle-config.xml"),
+  compileScalaStyle := scalastyle.in(Compile).toTask("").value,
+  (compile in Compile) <<= (compile in Compile) dependsOn compileScalaStyle
+)
+
+val formatPreferences = FormattingPreferences()
+  .setPreference(RewriteArrowSymbols, false)
+  .setPreference(AlignParameters, true)
+  .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(SpacesAroundMultiImports, true)
+  .setPreference(DoubleIndentClassDeclaration, true)
+  .setPreference(AlignArguments, true)
+
+scalaStyleSettings ++ SbtScalariform.scalariformSettings ++ Seq(
+  ScalariformKeys.preferences in Compile := formatPreferences
+  , ScalariformKeys.preferences in Test := formatPreferences)
+
+
 name := """chronos"""
 
+version := "0.0.1-SNAPSHOT"
+
 scalaVersion := "2.11.8"
+
+scalacOptions ++= Seq(
+  "-feature"
+  , "-deprecation"
+  , "-unchecked"
+  , "-encoding", "UTF-8"
+  , "-Xfatal-warnings"
+  , "-language:existentials"
+  , "-language:implicitConversions"
+  , "-language:postfixOps"
+  , "-language:higherKinds"
+)
 
 resolvers ++= Seq(
   "Sonatype OSS Release Repository" at "https://oss.sonatype.org/content/repositories/releases/",
