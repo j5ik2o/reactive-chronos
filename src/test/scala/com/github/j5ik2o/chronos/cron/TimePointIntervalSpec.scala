@@ -6,14 +6,20 @@ import org.sisioh.baseunits.scala.time.{ Duration, TimePoint }
 import org.sisioh.baseunits.scala.timeutil.Clock
 
 class TimePointIntervalSpec extends FunSpec {
+
+  def createTimePointStream(value: TimePoint, duration: Duration, end: TimePoint): Stream[TimePoint] =
+    Stream.cons(value, createTimePointStream(value + duration, duration, end)).takeWhile(_ <= end)
+
   describe("TimePointInterval") {
-    it("stream") {
+    it("should be expected iterator values") {
       val start: TimePoint = TimePoint.at(2016, 1, 1, 0, 0, 0, 0)
       val end: TimePoint = start + Duration.minutes(1)
+      val duration = Duration.seconds(2)
       val interval = TimePointInterval.inclusive(Limit(start), Limit(end), Duration.seconds(2))
       val list = interval.timesIterator.toList
-      assert(list.head == start)
-      assert(list.last == end)
+      val expected = createTimePointStream(start, duration, end).toList
+      assert(list == expected)
     }
   }
+
 }

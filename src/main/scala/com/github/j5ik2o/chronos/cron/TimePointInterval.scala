@@ -1,7 +1,5 @@
 package com.github.j5ik2o.chronos.cron
 
-import java.time.ZoneId
-
 import org.sisioh.baseunits.scala.intervals.{ Interval, Limit, LimitValue, Limitless }
 import org.sisioh.baseunits.scala.time._
 
@@ -11,6 +9,20 @@ class TimePointInterval protected (
   interval:   Duration
 )
     extends Interval[TimePoint](startValue, true, endValue, true) with Serializable {
+
+  def createStream(startValue: LimitValue[TimePoint]): Stream[TimePoint]  ={
+    require(hasLowerLimit)
+    Stream.cons(startValue.toValue, createStream(startValue.toValue + interval)).takeWhile{ v =>
+      endValue match {
+        case _: Limitless[TimePoint] => true
+        case Limit(end)                => !v.isAfter(end)
+      }
+    }
+  }
+
+//  lazy val timesIterator: Iterator[TimePoint] =
+//    createStream(startValue).toIterator
+
 
   lazy val timesIterator: Iterator[TimePoint] = {
     if (!hasLowerLimit) {

@@ -19,7 +19,7 @@ class CrondCalender(startTimePoint: LimitValue[TimePoint], endTimePoint: LimitVa
     val cronTimePoints = cronTimePointsIterator.filterNot { tp =>
       tp.millisecondsFromEpoc < currentTimePoint.millisecondsFromEpoc
     }
-    (0 to numberOfDays).foldLeft[Option[TimePoint]](None) { (_, _) =>
+    (0 until numberOfDays).foldLeft[Option[TimePoint]](None) { (_, _) =>
       Some(cronTimePoints.next())
     }.get
   }

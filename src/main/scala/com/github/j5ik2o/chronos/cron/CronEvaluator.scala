@@ -17,7 +17,7 @@ class CronEvaluator(timePoint: TimePoint, timeZone: TimeZone = TimeZone.getDefau
     java.time.DayOfWeek.SATURDAY -> Calendar.SATURDAY
   )
 
-  def visit(e: Expr) = e match {
+  def visit(e: Expr): Boolean = e match {
     case CronExpr(mins, hours, days, months, dayOfWeeks) => {
       val dateTime = timePoint.asJavaZonedDateTime(timeZone.toZoneId)
       val min = dateTime.getMinute
@@ -58,7 +58,7 @@ class CronEvaluator(timePoint: TimePoint, timeZone: TimeZone = TimeZone.getDefau
   // CRONDパラメータの各式の評価を行うビジター
   case class ExpressionEvaluator(now: Int, max: Int) extends ExprVisitor[Boolean] {
     //println("now = %d, max = %d".format(now, max))
-    def visit(e: Expr) = e match {
+    def visit(e: Expr): Boolean = e match {
       case AnyValueExpr()            => true
       case LastValue() if now == max => true
       case ValueExpr(n) if now == n  => true

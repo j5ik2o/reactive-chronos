@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
 import akka.testkit.{ TestKit, TestProbe }
 import com.github.j5ik2o.chronos.domain.{ Job, Trigger }
-import com.github.j5ik2o.chronos.scheduler.SchedulerProtocol.{ Start, Stop, UnScheduleJob }
+import com.github.j5ik2o.chronos.scheduler.JobSchedulerProtocol.{ Start, Stop, UnScheduleJob }
 import org.scalatest.{ BeforeAndAfterAll, FunSpecLike }
 import org.sisioh.baseunits.scala.time.Duration
 
@@ -13,10 +13,10 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{ Duration => SDuration, _ }
 import scala.util.Success
 
-class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLike with BeforeAndAfterAll {
+class JobSchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLike with BeforeAndAfterAll {
 
   val schedulerId = UUID.randomUUID()
-  val scheduler = system.actorOf(Scheduler.props(schedulerId), name = Scheduler.name(schedulerId))
+  val scheduler = system.actorOf(JobScheduler.props(schedulerId), name = JobScheduler.name(schedulerId))
 
   private def jobProps(probeRef: ActorRef) = Props(new Actor with ActorLogging {
     override def receive: Receive = {
@@ -58,7 +58,7 @@ class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLi
       val triggers = Seq(
         Trigger.ofInterval(UUID.randomUUID(), job.id, "test", Duration.seconds(delay), Duration.seconds(delay))
       )
-      scheduler ! SchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
+      scheduler ! JobSchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
       senderProbe.receiveN(2, 30 seconds)
       scheduler ! UnScheduleJob(UUID.randomUUID(), triggers.map(_.id))
       scheduler ! Stop()
@@ -67,14 +67,14 @@ class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLi
       val senderProbe = TestProbe()
       implicit val self = senderProbe.ref
       val schedulerId = UUID.randomUUID()
-      val scheduler = system.actorOf(Scheduler.props(schedulerId), name = Scheduler.name(schedulerId))
+      val scheduler = system.actorOf(JobScheduler.props(schedulerId), name = JobScheduler.name(schedulerId))
       val delay = 3
       scheduler ! Start()
       val job = Job(UUID.randomUUID(), errorJobProps(self))
       val triggers = Seq(
         Trigger.ofDelay(UUID.randomUUID, job.id, "test", Duration.seconds(delay))
       )
-      scheduler ! SchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
+      scheduler ! JobSchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
       senderProbe.expectNoMsg()
       scheduler ! UnScheduleJob(UUID.randomUUID(), triggers.map(_.id))
       scheduler ! Stop()
@@ -88,7 +88,7 @@ class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLi
       val triggers = Seq(
         Trigger.ofDelay(UUID.randomUUID, job.id, "test", Duration.seconds(delay))
       )
-      scheduler ! SchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
+      scheduler ! JobSchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
       senderProbe.expectMsg((delay * 2) seconds, "test")
       scheduler ! UnScheduleJob(UUID.randomUUID(), triggers.map(_.id))
       scheduler ! Stop()
@@ -102,7 +102,7 @@ class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLi
       val triggers = Seq(
         Trigger.ofInterval(UUID.randomUUID(), job.id, "test", Duration.seconds(delay), Duration.seconds(delay))
       )
-      scheduler ! SchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
+      scheduler ! JobSchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
       senderProbe.expectMsg((delay * 2) seconds, "test")
       senderProbe.expectMsg((delay * 2) seconds, "test")
       scheduler ! UnScheduleJob(UUID.randomUUID(), triggers.map(_.id))
@@ -116,10 +116,10 @@ class SchedulerSpec extends TestKit(ActorSystem("SchedulerSpec")) with FunSpecLi
       val triggers = Seq(
         Trigger.ofCron(UUID.randomUUID(), job.id, "test", s"*/1 * * * *")
       )
-      scheduler ! SchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
+      scheduler ! JobSchedulerProtocol.ScheduleJob(UUID.randomUUID(), job, triggers)
       senderProbe.expectMsg(2 minutes, "test")
       senderProbe.expectMsg(2 minutes, "test")
-      scheduler ! SchedulerProtocol.UnScheduleJob(UUID.randomUUID(), triggers.map(_.id))
+      scheduler ! JobSchedulerProtocol.UnScheduleJob(UUID.randomUUID(), triggers.map(_.id))
       scheduler ! Stop()
     }
   }

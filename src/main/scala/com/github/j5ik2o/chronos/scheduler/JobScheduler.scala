@@ -17,7 +17,7 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.Success
 
-object SchedulerProtocol {
+object JobSchedulerProtocol {
 
   trait Message {
     protected def toStringBuilder = new ToStringBuilder(this, DefaultToStringStyle.ofClass(getClass))
@@ -72,13 +72,13 @@ object SchedulerProtocol {
 
 }
 
-object Scheduler {
+object JobScheduler {
   def name(id: UUID): String = s"scheduler-$id"
 
-  def props(id: UUID = UUID.randomUUID(), tickInterval: FiniteDuration = 1 seconds): Props = Props(new Scheduler(id, tickInterval))
+  def props(id: UUID = UUID.randomUUID(), tickInterval: FiniteDuration = 1 seconds): Props = Props(new JobScheduler(id, tickInterval))
 }
 
-class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with ActorLogging {
+class JobScheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with ActorLogging {
 
   import context.dispatcher
 
@@ -90,49 +90,51 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
 
   private var jobStatusRepository: JobStatusRepository = JobStatusRepository()
 
-  private var maybeNextTimePointCancellable: Option[Cancellable] = None
+  private var maybeCancellable: Option[Cancellable] = None
+
+  private val jobControllerSinks = mutable.Map.empty[UUID, Sink[Message, ActorRef]]
 
   implicit val materializer = ActorMaterializer()
 
-  val otherwise: Receive = {
-    case v @ SchedulerProtocol.ScheduleJob(_, job, triggers, circuitBreakSettings) =>
+  private val otherwise: Receive = {
+    case v @ JobSchedulerProtocol.ScheduleJob(_, job, triggers, circuitBreakSettings) =>
       log.debug("Job Scheduled: job = {}, triggers = {}", job, triggers)
       jobRepository = jobRepository.store(job).get
       triggerRepository = triggerRepository.storeMulti(triggers).get
-    case SchedulerProtocol.UnScheduleJob(_, triggerIds) =>
+    case JobSchedulerProtocol.UnScheduleJob(_, triggerIds) =>
       log.debug("Job UnScheduled: triggerIds = {}", triggerIds)
       triggerRepository = triggerRepository.deleteMulti(triggerIds).get
   }
 
   private val stopped: Receive = {
-    case SchedulerProtocol.Start(_) if maybeNextTimePointCancellable.isEmpty =>
+    case JobSchedulerProtocol.Start(_) if maybeCancellable.isEmpty =>
       context.become(startedWithOtherwise)
-      maybeNextTimePointCancellable = Some(context.system.scheduler.schedule(0 seconds, tickInterval, self, SchedulerProtocol.Tick))
+      maybeCancellable = Some(context.system.scheduler.schedule(0 seconds, tickInterval, self, JobSchedulerProtocol.Tick))
   }
 
-  private def stoppedWithOtherwise: PartialFunction[Any, Unit] = stopped orElse otherwise
+  private def stoppedWithOtherwise: Receive = stopped orElse otherwise
 
   private def resolveJobStatus(jobId: UUID): Option[JobStatus] = jobStatusRepository.resolveByJobId(jobId).map(Some(_)).recoverWith {
     case ex: NoSuchElementException => Success(None)
   }.get
 
-  private def resolveTriggerStatus(trigger: Trigger, nextFireTimePoint: TimePoint): Option[TriggerStatus] = {
-    triggerStatusRepository.resolveByTriggerIdAndComputedFireAt(trigger.id, nextFireTimePoint).map(Some(_)).recoverWith {
-      case ex: NoSuchElementException => Success(None)
-    }.get
-  }
+//  private def resolveTriggerStatus(trigger: Trigger, nextFireTimePoint: TimePoint): Option[TriggerStatus] = {
+//    triggerStatusRepository.resolveByTriggerIdAndComputedFireAt(trigger.id, nextFireTimePoint).map(Some(_)).recoverWith {
+//      case ex: NoSuchElementException => Success(None)
+//    }.get
+//  }
 
   private def resolveJobById(jobId: UUID): Job = {
     jobRepository.resolveBy(jobId).get
   }
 
-  val jobControllerSinks = mutable.Map.empty[UUID, Sink[Message, ActorRef]]
+  private def startedWithOtherwise: Receive = started orElse otherwise
 
   private val started: Receive = {
-    case SchedulerProtocol.Stop(_) if maybeNextTimePointCancellable.isDefined =>
+    case JobSchedulerProtocol.Stop(_) if maybeCancellable.isDefined =>
       context.become(stoppedWithOtherwise)
-      maybeNextTimePointCancellable.foreach(_.cancel())
-      maybeNextTimePointCancellable = None
+      maybeCancellable.foreach(_.cancel())
+      maybeCancellable = None
     case msg @ JobControllerProtocol.Started(_, _, JobControlContext(job, trigger, jobStatus, triggerStatus)) =>
       log.debug("Job Started = {}", msg)
       jobStatusRepository = jobStatusRepository.store(jobStatus).get
@@ -141,7 +143,7 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
       log.debug("Job Finished = {}", msg)
       jobStatusRepository = jobStatusRepository.store(jobStatus).get
       triggerStatusRepository = triggerStatusRepository.store(triggerStatus).get
-    case SchedulerProtocol.Tick =>
+    case JobSchedulerProtocol.Tick =>
       val now = Clock.now
       triggerRepository.iterator.foreach { trigger =>
         val job = resolveJobById(trigger.jobId)
@@ -150,8 +152,20 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
         if (!job.startBeforeFinished && maybeJobStatus.exists(_.running)) {
         } else if (trigger.nextFireTimePoint.millisecondsFromEpoc <= now.millisecondsFromEpoc) {
           log.debug("fire job = {}, trigger = {}", job, trigger)
-          val jobStatus = JobStatus(UUID.randomUUID(), job.id, running = true)
-          val triggerStatus = TriggerStatus(UUID.randomUUID(), job.id, trigger.id, trigger.nextFireTimePoint, Some(Clock.now))
+
+          val jobStatus = JobStatus(
+            UUID.randomUUID(),
+            job.id,
+            running = true
+          )
+
+          val triggerStatus = TriggerStatus(
+            UUID.randomUUID(),
+            job.id,
+            trigger.id,
+            trigger.nextFireTimePoint,
+            Some(Clock.now)
+          )
 
           triggerRepository = triggerRepository.store(trigger.recreate).get
           jobStatusRepository = jobStatusRepository.store(jobStatus).get
@@ -160,7 +174,16 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
           val sink = jobControllerSinks.getOrElseUpdate(
             job.id,
             Sink.actorSubscriber[JobControllerProtocol.Message](
-              JobController.props(UUID.randomUUID(), self, JobControlContext(job, trigger, jobStatus, triggerStatus))
+              JobController.props(
+                UUID.randomUUID(),
+                self,
+                JobControlContext(
+                  job,
+                  trigger,
+                  jobStatus,
+                  triggerStatus
+                )
+              )
             )
           )
           Source.single(JobControllerProtocol.Start(UUID.randomUUID())).runWith(sink)
@@ -168,13 +191,12 @@ class Scheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Actor
       }
   }
 
-  def startedWithOtherwise = started orElse otherwise
 
   override def receive: Receive = stoppedWithOtherwise
 
   @scala.throws[Exception](classOf[Exception])
   override def postStop(): Unit = {
-    maybeNextTimePointCancellable.foreach(_.cancel())
+    maybeCancellable.foreach(_.cancel())
     super.postStop()
   }
 }

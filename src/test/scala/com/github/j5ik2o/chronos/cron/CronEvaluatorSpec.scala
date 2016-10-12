@@ -18,26 +18,27 @@ class CronEvaluatorSpec extends FunSpec {
       assert(!ast2.accept(evaluator2))
     }
 
-    //    it("複数の分を評価できること") {
-    //      val ast = CronExpr(ListExpr(List(ValueExpr(1), ValueExpr(2), ValueExpr(3))), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
-    //      for (m <- 1 to 3) {
-    //        assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, m, ZoneIds.Default))))
-    //      }
-    //    }
-    //
-    //    it("範囲の分を評価できること") {
-    //      val ast = CronExpr(RangeExpr(ValueExpr(1), ValueExpr(3), NoOp()), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
-    //      for (m <- 1 to 3) {
-    //        assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, m, ZoneIds.Default))))
-    //      }
-    //    }
-    //
-    //    it("範囲(分割)の分を評価できること") {
-    //      val ast = CronExpr(RangeExpr(ValueExpr(1), ValueExpr(3), ValueExpr(2)), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
-    //      for (m <- 1 to 3 by 2) {
-    //        assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, m, ZoneIds.Default))))
-    //      }
-    //    }
+    it("複数の分を評価できること") {
+      val ast = CronExpr(ListExpr(List(ValueExpr(1), ValueExpr(2), ValueExpr(3))), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 1, ZoneIds.Default))))
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 2, ZoneIds.Default))))
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 3, ZoneIds.Default))))
+    }
+
+    it("範囲の分を評価できること") {
+      val ast = CronExpr(RangeExpr(ValueExpr(1), ValueExpr(3), NoOp()), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 1, ZoneIds.Default))))
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 2, ZoneIds.Default))))
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 3, ZoneIds.Default))))
+    }
+
+    it("範囲(分割)の分を評価できること") {
+      val ast = CronExpr(RangeExpr(ValueExpr(1), ValueExpr(3), ValueExpr(2)), ValueExpr(1), ValueExpr(1), ValueExpr(1), AnyValueExpr())
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 1, ZoneIds.Default))))
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 2, ZoneIds.Default))))
+      assert(ast.accept(new CronEvaluator(TimePoint.at(2011, 1, 1, 1, 3, ZoneIds.Default))))
+    }
+
   }
 
 }
