@@ -26,6 +26,6 @@ case class TriggerRepository(entites: Map[UUID, Trigger] = Map.empty) {
     entites(id)
   }
 
-  def iterator: Iterator[Trigger] = entites.map { case (_, v) => v }.toIterator
+  def iterator: Iterator[Trigger] = entites.map { case (_, v) => v }.toList.sortWith(_.nextFireTimePoint < _.nextFireTimePoint).toIterator
 
 }
