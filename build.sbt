@@ -31,6 +31,8 @@ version := "0.0.1-SNAPSHOT"
 
 scalaVersion := "2.11.8"
 
+crossScalaVersions := Seq("2.10.5", "2.11.8", "2.12.1")
+
 scalacOptions ++= Seq(
   "-feature"
   , "-deprecation"
@@ -50,7 +52,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.sisioh" %% "baseunits-scala" % "0.1.18-SNAPSHOT",
+  "org.sisioh" %% "baseunits-scala" % "0.1.19",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.scalactic" %% "scalactic" % "3.0.0",
   "org.scalatest" %% "scalatest" % "3.0.0" % "test",
