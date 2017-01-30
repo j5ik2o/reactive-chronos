@@ -64,6 +64,12 @@ object JobSchedulerProtocol {
         .append("triggerIds", triggerIds.asJava)
   }
 
+  case class JobUnScheduled(id: UUID = UUID.randomUUID(), requestId: Option[UUID], triggerIds: Seq[UUID]) extends CommandResponse {
+    override protected def toStringBuilder: ToStringBuilder =
+      super.toStringBuilder
+        .append("triggerIds", triggerIds.asJava)
+  }
+
   case class Start(id: UUID = UUID.randomUUID()) extends CommandRequest
 
   case class Stop(id: UUID = UUID.randomUUID()) extends CommandRequest
@@ -104,12 +110,15 @@ class JobScheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Ac
     case JobSchedulerProtocol.UnScheduleJob(_, triggerIds) =>
       log.debug("Job UnScheduled: triggerIds = {}", triggerIds)
       triggerRepository = triggerRepository.deleteMulti(triggerIds).get
+
   }
 
   private val stopped: Receive = {
     case JobSchedulerProtocol.Start(_) if maybeCancellable.isEmpty =>
       context.become(startedWithOtherwise)
-      maybeCancellable = Some(context.system.scheduler.schedule(0 seconds, tickInterval, self, JobSchedulerProtocol.Tick))
+      val delay = 0 // 60 - Clock.now.asJavaZonedDateTime().getSecond
+      log.debug(s"delay seconds = $delay")
+      maybeCancellable = Some(context.system.scheduler.schedule(delay seconds, tickInterval, self, JobSchedulerProtocol.Tick))
   }
 
   private def stoppedWithOtherwise: Receive = stopped orElse otherwise
@@ -149,22 +158,23 @@ class JobScheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Ac
         val job = resolveJobById(trigger.jobId)
         val maybeJobStatus = resolveJobStatus(job.id)
         //log.debug("trigger = {}", trigger)
-        if (!job.startBeforeFinished && maybeJobStatus.exists(_.running)) {
+        if (maybeJobStatus.exists(_.running)) {
+          log.debug("non fire job = {}, jobStatus = {}", job, maybeJobStatus)
         } else if (trigger.nextFireTimePoint.millisecondsFromEpoc <= now.millisecondsFromEpoc) {
           log.debug("fire job = {}, trigger = {}", job, trigger)
 
           val jobStatus = JobStatus(
-            UUID.randomUUID(),
-            job.id,
+            id = UUID.randomUUID(),
+            jobId = job.id,
             running = true
           )
 
           val triggerStatus = TriggerStatus(
-            UUID.randomUUID(),
-            job.id,
-            trigger.id,
-            trigger.nextFireTimePoint,
-            Some(Clock.now)
+            id = UUID.randomUUID(),
+            jobId = job.id,
+            triggerId = trigger.id,
+            computedFireAt = trigger.nextFireTimePoint,
+            startedAt = Some(Clock.now)
           )
 
           triggerRepository = triggerRepository.store(trigger.recreate).get
@@ -178,10 +188,10 @@ class JobScheduler(id: UUID, tickInterval: FiniteDuration) extends Actor with Ac
                 UUID.randomUUID(),
                 self,
                 JobControlContext(
-                  job,
-                  trigger,
-                  jobStatus,
-                  triggerStatus
+                  job = job,
+                  trigger = trigger,
+                  jobStatus = jobStatus,
+                  triggerStatus = triggerStatus
                 )
               )
             )

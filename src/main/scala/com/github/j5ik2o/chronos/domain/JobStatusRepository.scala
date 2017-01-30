@@ -32,7 +32,7 @@ case class JobStatusRepository(entities: Map[UUID, JobStatus] = Map.empty) {
 
 object JobStatusRepository {
 
-  implicit def toOption(t: Try[JobStatusRepository]) = {
+  implicit def toOption(t: Try[JobStatusRepository]): Try[Option[JobStatusRepository]] = {
     t.map(Some(_)).recoverWith {
       case ex: NoSuchElementException => Success(None)
     }
