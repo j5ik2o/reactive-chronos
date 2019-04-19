@@ -1,10 +1,5 @@
-resolvers ++= Seq(
-  Classpaths.typesafeReleases,
-  Classpaths.typesafeSnapshots,
-  "Sonatype OSS Snapshot Repository" at "https://oss.sonatype.org/content/repositories/snapshots",
-  "Sonatype OSS Release Repository" at "https://oss.sonatype.org/content/repositories/releases/"
-)
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.0")
 
-addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
+addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.4.1")
 
-addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
+addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
